@@ -1,6 +1,6 @@
 [Variables]
 Mode=1
-Decay=200
+Decay=100
 Bands=128
 MinR=60
 MaxR=200

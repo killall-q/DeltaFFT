@@ -118,12 +118,14 @@ function SetVar(var, min)
     if var == 'Height' then
         travel = set - barH
     elseif var == 'BarW' then
+        if tonumber(SKIN:GetVariable('BarG')) + set < 0 then return end
         SKIN:Bang('[!SetOptionGroup B W '..set..'][!SetOptionGroup C W '..set..']')
     elseif var == 'BarH' then
         barH = set
         travel = tonumber(SKIN:GetVariable('Height')) - set
         SKIN:Bang('!SetOptionGroup C H '..set)
     elseif var == 'BarG' then
+        if tonumber(SKIN:GetVariable('BarW')) + set < 0 then return end
         SKIN:Bang('[!SetOptionGroup B X '..set..'R][!SetOption B0 X 0]')
     end
     SKIN:Bang('[!SetOption '..var..'Set Text '..set..'][!SetVariable '..var..' "#Set#"][!WriteKeyValue Variables '..var..' '..set..' "#@#Linear.inc"]')
