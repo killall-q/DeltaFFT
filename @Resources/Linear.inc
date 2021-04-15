@@ -1,0 +1,11 @@
+[Variables]
+Mode=
+Decay=200
+Bands=96
+Height=100
+BarW=3
+BarH=2
+BarG=2
+Color0=FFFFFF
+Color1=FFFFFF40
+ShowSet=

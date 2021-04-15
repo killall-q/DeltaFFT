@@ -1,0 +1,15 @@
+[Variables]
+Mode=1
+Decay=200
+Bands=128
+MinR=60
+MaxR=200
+StartA=114
+SweepA=300
+Solid=1
+LineW=4
+ArcH=4
+ArcG=-12
+Color0=FFFFFF
+Color1=FFFFFF40
+ShowSet=
