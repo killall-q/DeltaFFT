@@ -1,8 +1,8 @@
 [Variables]
 Mode=
 Decay=200
-Bands=96
-Height=100
+Bands=64
+Height=40
 BarW=3
 BarH=2
 BarG=2

@@ -1,5 +1,5 @@
 [Variables]
-Mode=1
+Mode=
 Decay=100
 Bands=128
 MinR=60
