@@ -1,7 +1,10 @@
 [Variables]
 Mode=
 Decay=200
+Sens=60
+Channel=Sum
 Bands=64
+Order=
 Height=40
 BarW=3
 BarH=2

@@ -22,9 +22,11 @@ function Initialize()
     end
     os.remove(SKIN:GetVariable('@')..'Measures.inc')
     os.remove(SKIN:GetVariable('@')..'Meters.inc')
+    SetChannel(SKIN:GetVariable('Channel'))
+    SetOrder(tonumber(SKIN:GetVariable('Order')), true)
     SetAngle()
     SetStyle(tonumber(SKIN:GetVariable('Solid')))
-    SKIN:Bang('[!SetOption Mode'..(mode and 1 or 0)..' SolidColor FF0000][!SetOption Mode'..(mode and 1 or 0)..' MouseLeaveAction "!SetOption #*CURRENTSECTION*# SolidColor FF0000"]')
+    SKIN:Bang('[!SetOption Mode'..(mode and 1 or 0)..' SolidColor FF0000][!SetOption Mode'..(mode and 1 or 0)..' MouseLeaveAction "!SetOption #*CURRENTSECTION*# SolidColor FF0000"][!SetOption SensSlider X '..(95 + tonumber(SKIN:GetVariable('Sens')) * 0.9)..']')
     if mode then
         SKIN:Bang('!SetOption DecaySlider X '..(62 + tonumber(SKIN:GetVariable('Decay')) * 0.09))
     else
@@ -61,18 +63,18 @@ end
 
 function ShowSettings()
     local maxR = tonumber(SKIN:GetVariable('MaxR'))
-    SKIN:Bang('[!SetOption Handle W '..math.max(maxR * 2, 200)..'][!SetOption Handle H '..math.max(maxR * 2, 318)..'][!SetOption Hover LineColor 00000001][!MoveMeter 12 12 ModeLabel][!ShowMeterGroup Set]')
+    SKIN:Bang('[!SetOption Handle W '..math.max(maxR * 2, 200)..'][!SetOption Handle H '..math.max(maxR * 2, 368)..'][!SetOption Hover LineColor 00000001][!MoveMeter 12 12 ModeLabel][!MoveMeter 83 62 ChannelBG][!ShowMeterGroup Set]')
 end
 
 function HideSettings()
     if lock then return end
-    SKIN:Bang('[!MoveMeter 12 -40 ModeLabel][!HideMeterGroup Set][!SetOption Hover LineColor 00000001]')
+    SKIN:Bang('[!MoveMeter 12 -40 ModeLabel][!MoveMeter 83 -300 ChannelBG][!HideMeterGroup Set][!SetOption Hover LineColor 00000001]')
 end
 
 function GenMeasures()
     local file = io.open(SKIN:GetVariable('@')..'Measures.inc', 'w')
     for b = 1, bands - 1 do
-        file:write('[mFFT'..b..']\nMeasure=Plugin\nPlugin=AudioLevel\nParent=mFFT0\nType=Band\nBandIdx='..b..'\n')
+        file:write('[mFFT'..b..']\nMeasure=Plugin\nPlugin=AudioLevel\nParent=mFFT0\nType=Band\nBandIdx='..b..'\nGroup=mFFT\n')
     end
     file:close()
 end
@@ -102,15 +104,34 @@ function SetDecay(n, m)
     SKIN:Bang('[!SetOption DecayVal Text '..set..'][!SetVariable Decay '..set..'][!WriteKeyValue Variables Decay '..set..' "#@#Radial.inc"]')
 end
 
-function SetAngle(var, set)
-    local startA = math.rad(var == 'StartA' and set or tonumber(SKIN:GetVariable('StartA')))
-    local sweepA = math.rad(var == 'SweepA' and set or tonumber(SKIN:GetVariable('SweepA')))
-    local arcG = math.rad(var == 'ArcG' and set or tonumber(SKIN:GetVariable('ArcG')))
-    local rotA = sweepA / bands
-    for b = 0, bands - 1 do
-        SKIN:Bang('[!SetOption A'..b..' StartAngle '..(startA + rotA * b)..']'..(mode and '[!SetOption C'..b..' StartAngle '..(startA + rotA * b)..']' or ''))
+function SetSens(n, m)
+    local sens = tonumber(SKIN:GetVariable('Sens'))
+    if m then
+        sens = math.floor(m * 0.11) * 10
+    elseif sens + n >= 0 and sens + n <= 100 then
+        sens = math.floor((sens + n) * 0.1 + 0.5) * 10
+    else return end
+    SKIN:GetMeter('SensSlider'):SetX(95 + sens * 0.9)
+    SKIN:Bang('[!SetOption mFFT0 Sensitivity '..sens..'][!SetOption SensVal Text '..sens..'][!SetVariable Sens '..sens..'][!WriteKeyValue Variables Sens '..sens..' "#@#Radial.inc"]')
+end
+
+function SetChannel(n)
+    local name = {[0]='Left','Right','Center','Subwoofer','Back Left','Back Right','Side Left','Side Right'}
+    if n == 'Stereo' then
+        -- Split bands between L and R channels
+        for b = 0, bands / 2 - 1 do
+            SKIN:Bang('[!SetOption mFFT'..b..' Channel L][!SetOption mFFT'..b..' BandIdx '..(bands - b * 2 - 2)..']')
+        end
+        for b = bands / 2, bands - 1 do
+            SKIN:Bang('[!SetOption mFFT'..b..' Channel R][!SetOption mFFT'..b..' BandIdx '..(b * 2 - bands - 2)..']')
+        end
+    else
+        SKIN:Bang('!SetOptionGroup mFFT Channel '..n)
+        for b = 0, bands - 1 do
+            SKIN:Bang('!SetOption mFFT'..b..' BandIdx '..b)
+        end
     end
-    SKIN:Bang('[!SetOptionGroup A RotationAngle '..(rotA - arcG)..']'..(mode and '[!SetOptionGroup C RotationAngle '..(rotA - arcG)..']' or '')..(set and '[!SetVariable '..var..' "#Set#"][!WriteKeyValue Variables '..var..' '..set..' "#@#Radial.inc"]' or ''))
+    SKIN:Bang('[!SetOption ChannelSet Text "'..(name[tonumber(n)] or n)..'"][!SetVariable Channel '..n..'][!WriteKeyValue Variables Channel '..n..' "#@#Radial.inc"]')
 end
 
 function SetBands()
@@ -120,9 +141,29 @@ function SetBands()
     SKIN:Bang('[!WriteKeyValue Variables Bands '..set..' "#@#Radial.inc"][!WriteKeyValue Variables ShowSet 1 "#@#Radial.inc"][!Refresh]')
 end
 
+function SetOrder(n, m)
+    if tonumber(n) ~= tonumber(SKIN:GetVariable('Order')) or m and n then
+        for b = 0, bands / 2 - 1 do
+            mFFT[b], mFFT[bands - b - 1] = mFFT[bands - b - 1], mFFT[b]
+        end
+    end
+    SKIN:Bang('[!SetOption Order'..(n and 'Right' or 'Left')..' SolidColor 505050E0][!SetOption Order'..(n and 'Right' or 'Left')..' MouseLeaveAction "!SetOption #*CURRENTSECTION*# SolidColor 505050E0"][!SetOption Order'..(n and 'Left' or 'Right')..' SolidColor FF0000][!SetOption Order'..(n and 'Left' or 'Right')..' MouseLeaveAction "!SetOption #*CURRENTSECTION*# SolidColor FF0000"][!SetVariable Order '..(n and 1 or '""')..'][!WriteKeyValue Variables Order '..(n and 1 or '""')..' "#@#Radial.inc"]')
+end
+
+function SetAngle(var, set)
+    local startA = math.rad(var == 'StartA' and set or tonumber(SKIN:GetVariable('StartA')))
+    local sweepA = math.rad(var == 'SweepA' and set or tonumber(SKIN:GetVariable('SweepA')))
+    local arcG = math.rad(var == 'ArcG' and set or tonumber(SKIN:GetVariable('ArcG')))
+    local rotA = (sweepA + arcG) / bands
+    for b = 0, bands - 1 do
+        SKIN:Bang('[!SetOption A'..b..' StartAngle '..(startA + rotA * b)..']'..(mode and '[!SetOption C'..b..' StartAngle '..(startA + rotA * b)..']' or ''))
+    end
+    SKIN:Bang('[!SetOptionGroup A RotationAngle '..(rotA - arcG)..']'..(mode and '[!SetOptionGroup C RotationAngle '..(rotA - arcG)..']' or '')..(set and '[!SetVariable '..var..' "#Set#"][!WriteKeyValue Variables '..var..' '..set..' "#@#Radial.inc"]' or ''))
+end
+
 function SetStyle(n)
     local solid = tonumber(SKIN:GetVariable('Solid')) and true or false
-    SKIN:Bang('[!SetOption Style'..(solid and 1 or 0)..' SolidColor 505050E0][!SetOption Style'..(solid and 1 or 0)..' MouseLeaveAction "!SetOption #*CURRENTSECTION*# SolidColor 505050E0"][!SetOption Style'..(n or 0)..' SolidColor FF0000][!SetOption Style'..(n or 0)..' MouseLeaveAction "!SetOption #*CURRENTSECTION*# SolidColor FF0000"][!SetOption LineWLabel X '..(n and -200 or 12)..'][!SetOption LineWLabel Y '..(n and 'r' or '6R')..'][!SetOptionGroup A Solid '..(n or 0)..'][!SetOptionGroup C Solid '..(n or 0)..'][!SetVariable Solid '..(n or '""')..'][!WriteKeyValue Variables Solid '..(n or '""')..' "#@#Radial.inc"]')
+    SKIN:Bang('[!SetOption Style'..(solid and 1 or 0)..' SolidColor 505050E0][!SetOption Style'..(solid and 1 or 0)..' MouseLeaveAction "!SetOption #*CURRENTSECTION*# SolidColor 505050E0"][!SetOption Style'..(n or 0)..' SolidColor FF0000][!SetOption Style'..(n or 0)..' MouseLeaveAction "!SetOption #*CURRENTSECTION*# SolidColor FF0000"][!SetOption LineWLabel X '..(n and -200 or 12)..'][!SetOption LineWLabel Y '..(n and 'r' or '6R')..'][!SetOption ArcGLabel X '..(n and 12 or -200)..'][!SetOption ArcGLabel Y '..(n and '6R' or 'r')..'][!SetOptionGroup A Solid '..(n or 0)..'][!SetOptionGroup C Solid '..(n or 0)..'][!SetVariable Solid '..(n or '""')..'][!WriteKeyValue Variables Solid '..(n or '""')..' "#@#Radial.inc"]')
 end
 
 function SetVar(var, min)
@@ -133,7 +174,7 @@ function SetVar(var, min)
         local maxR = tonumber(SKIN:GetVariable('MaxR'))
         if set >= maxR then return end
         minR = set
-        travel = maxR - set
+        travel = maxR - set - arcH
     elseif var == 'MaxR' then
         if set <= minR then return end
         travel = set - minR - arcH
