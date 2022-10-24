@@ -1,5 +1,5 @@
 [Variables]
-Mode=
+Mode=0
 Decay=100
 Sens=40
 Channel=Stereo
@@ -15,4 +15,4 @@ ArcH=4
 ArcG=-12
 Color0=FFFFFF
 Color1=FFFFFF40
-ShowSet=
+ShowSet=0

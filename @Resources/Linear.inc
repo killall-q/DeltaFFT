@@ -1,14 +1,14 @@
 [Variables]
-Mode=
+Mode=0
 Decay=200
 Sens=60
 Channel=Sum
 Bands=64
-Order=
+Order=0
 Height=40
 BarW=3
 BarH=2
 BarG=2
 Color0=FFFFFF
 Color1=FFFFFF40
-ShowSet=
+ShowSet=0
